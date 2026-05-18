@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Proxy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 32px; width: 420px; }
+  h1 { font-size: 20px; margin-bottom: 24px; color: #333; }
+  label { display: block; font-size: 14px; color: #666; margin-bottom: 6px; }
+  input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
+  button { background: #10a37f; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; width: 100%; }
+  button:hover { background: #0e8c6b; }
+  .status { margin-top: 16px; padding: 10px; border-radius: 4px; font-size: 14px; display: none; }
+  .status.success { background: #e6f7ed; color: #0e8c6b; display: block; }
+  .status.error { background: #fde8e8; color: #c53030; display: block; }
+  .ready { text-align: center; }
+  .ready .check { font-size: 48px; color: #10a37f; margin-bottom: 12px; }
+  .ready p { color: #666; font-size: 14px; margin-top: 8px; }
+  .key-display { background: #f5f5f5; padding: 8px 12px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #999; margin: 12px 0; }
+  .clear-btn { background: #e53e3e; margin-top: 8px; }
+  .clear-btn:hover { background: #c53030; }
+</style>
+</head>
+<body>
+<div class="card" id="app">
+  <h1>Claude Code Proxy</h1>
+  <div id="status-area">
+    <p style="color:#999;font-size:14px;">Loading...</p>
+  </div>
+</div>
+<script>
+async function loadStatus() {
+  const res = await fetch('/admin/status');
+  const data = await res.json();
+  const area = document.getElementById('status-area');
+
+  if (data.configured) {
+    area.innerHTML = `
+      <div class="ready">
+        <div class="check">&#10003;</div>
+        <p>Proxy is ready to use</p>
+        <div class="key-display">${data.masked_key}</div>
+        <button class="clear-btn" onclick="clearKey()">Remove Key</button>
+      </div>`;
+  } else {
+    area.innerHTML = `
+      <p style="color:#999;font-size:14px;margin-bottom:16px;">Enter your DeepSeek API key to get started.</p>
+      <label for="api-key">API Key</label>
+      <input type="password" id="api-key" placeholder="sk-..." autofocus>
+      <button onclick="saveKey()">Save Key</button>
+      <div id="message"></div>`;
+  }
+}
+
+async function saveKey() {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) return;
+  const msg = document.getElementById('message');
+  const res = await fetch('/admin/key', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({api_key: key})
+  });
+  const data = await res.json();
+  if (res.ok) {
+    msg.className = 'status success';
+    msg.textContent = 'Key saved! Proxy is ready.';
+    setTimeout(loadStatus, 1000);
+  } else {
+    msg.className = 'status error';
+    msg.textContent = data.error || 'Failed to save key';
+  }
+}
+
+async function clearKey() {
+  if (!confirm('Remove the API key? Requests will stop working.')) return;
+  const res = await fetch('/admin/key', { method: 'DELETE' });
+  if (res.ok) loadStatus();
+}
+
+loadStatus();
+</script>
+</body>
+</html>
