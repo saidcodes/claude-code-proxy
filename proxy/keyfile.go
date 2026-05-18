@@ -11,7 +11,8 @@ var keyFilePath = defaultKeyFilePath
 func defaultKeyFilePath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return ".claude-code-proxy/key.json"
+		// fallback to temp directory on systems without a home dir (e.g., containers)
+		home = os.TempDir()
 	}
 	return filepath.Join(home, ".claude-code-proxy", "key.json")
 }
