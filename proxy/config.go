@@ -40,3 +40,37 @@ func LoadConfig() (*Config, error) {
 		TargetBaseURL:  baseURL,
 	}, nil
 }
+
+// SetAPIKey updates the API key at runtime (e.g., from admin UI).
+func (c *Config) SetAPIKey(key string) {
+	c.DeepSeekAPIKey = key
+}
+
+// LoadConfigWithKeyFile tries env vars first, then falls back to the key file.
+// Unlike LoadConfig, it does not return an error if DEEPSEEK_API_KEY is missing.
+func LoadConfigWithKeyFile() (*Config, error) {
+	cfg, err := LoadConfig()
+	if err == nil {
+		return cfg, nil
+	}
+
+	// Env var is missing — try key file
+	cfg = &Config{
+		TargetModel:   getEnvDefault("TARGET_MODEL", "deepseek-v4-flash"),
+		ProxyPort:     getEnvDefault("PROXY_PORT", "8080"),
+		TargetBaseURL: getEnvDefault("TARGET_BASE_URL", "https://api.deepseek.com/anthropic"),
+	}
+
+	key, kfErr := LoadKeyFile()
+	if kfErr == nil {
+		cfg.DeepSeekAPIKey = key
+	}
+	return cfg, nil
+}
+
+func getEnvDefault(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}

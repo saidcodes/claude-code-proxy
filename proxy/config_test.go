@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -60,5 +61,36 @@ func TestLoadConfig_Custom(t *testing.T) {
 	}
 	if cfg.TargetBaseURL != "https://custom.example.com" {
 		t.Errorf("expected https://custom.example.com, got %s", cfg.TargetBaseURL)
+	}
+}
+
+func TestLoadConfigWithKeyFile_Fallback(t *testing.T) {
+	os.Unsetenv("DEEPSEEK_API_KEY")
+	// Ensure the key file check doesn't accidentally use this test dir later
+	// by using a temp dir and overriding keyFilePath
+
+	dir := t.TempDir()
+	original := keyFilePath
+	keyFilePath = func() string {
+		return filepath.Join(dir, "key.json")
+	}
+	defer func() { keyFilePath = original }()
+
+	SaveKeyFile("sk-from-file")
+
+	cfg, err := LoadConfigWithKeyFile()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.DeepSeekAPIKey != "sk-from-file" {
+		t.Errorf("expected sk-from-file, got %s", cfg.DeepSeekAPIKey)
+	}
+}
+
+func TestSetAPIKey(t *testing.T) {
+	cfg := &Config{}
+	cfg.SetAPIKey("sk-runtime")
+	if cfg.DeepSeekAPIKey != "sk-runtime" {
+		t.Errorf("expected sk-runtime, got %s", cfg.DeepSeekAPIKey)
 	}
 }
