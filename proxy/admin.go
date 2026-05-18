@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -53,7 +54,7 @@ func (h *AdminHandler) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	if configured {
 		key := h.config.DeepSeekAPIKey
-		if len(key) > 8 {
+		if len(key) >= 8 {
 			resp["masked_key"] = key[:7] + "..."
 		} else {
 			resp["masked_key"] = "sk-...****"
@@ -85,6 +86,7 @@ func (h *AdminHandler) handlePostKey(w http.ResponseWriter, r *http.Request) {
 
 func (h *AdminHandler) handleDeleteKey(w http.ResponseWriter, r *http.Request) {
 	h.config.SetAPIKey("")
+	os.Remove(keyFilePath())
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 

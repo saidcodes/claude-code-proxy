@@ -117,4 +117,8 @@ func TestAdmin_DeleteKey(t *testing.T) {
 	if cfg.DeepSeekAPIKey != "" {
 		t.Errorf("expected empty key, got %s", cfg.DeepSeekAPIKey)
 	}
+	// Verify file was removed from disk
+	if _, err := LoadKeyFile(); err == nil {
+		t.Error("expected key file to be removed after delete")
+	}
 }
