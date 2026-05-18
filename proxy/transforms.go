@@ -36,6 +36,8 @@ func TransformRequest(body []byte, targetModel string) ([]byte, error) {
 	return json.Marshal(req)
 }
 
+// stripCacheControl recursively removes "cache_control" keys from maps and slices.
+// It mutates maps and slice elements in place.
 func stripCacheControl(v any) any {
 	switch val := v.(type) {
 	case map[string]any:
