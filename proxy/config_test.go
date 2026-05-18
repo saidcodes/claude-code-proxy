@@ -6,10 +6,9 @@ import (
 )
 
 func TestLoadConfig_MissingAPIKey(t *testing.T) {
+	orig := os.Getenv("DEEPSEEK_API_KEY")
 	os.Unsetenv("DEEPSEEK_API_KEY")
-	os.Unsetenv("TARGET_MODEL")
-	os.Unsetenv("PROXY_PORT")
-	os.Unsetenv("TARGET_BASE_URL")
+	defer os.Setenv("DEEPSEEK_API_KEY", orig)
 
 	_, err := LoadConfig()
 	if err == nil {
@@ -18,11 +17,7 @@ func TestLoadConfig_MissingAPIKey(t *testing.T) {
 }
 
 func TestLoadConfig_Defaults(t *testing.T) {
-	os.Setenv("DEEPSEEK_API_KEY", "sk-test-key")
-	defer os.Unsetenv("DEEPSEEK_API_KEY")
-	os.Unsetenv("TARGET_MODEL")
-	os.Unsetenv("PROXY_PORT")
-	os.Unsetenv("TARGET_BASE_URL")
+	t.Setenv("DEEPSEEK_API_KEY", "sk-test-key")
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -44,16 +39,10 @@ func TestLoadConfig_Defaults(t *testing.T) {
 }
 
 func TestLoadConfig_Custom(t *testing.T) {
-	os.Setenv("DEEPSEEK_API_KEY", "sk-custom")
-	os.Setenv("TARGET_MODEL", "deepseek-v4-pro")
-	os.Setenv("PROXY_PORT", "9090")
-	os.Setenv("TARGET_BASE_URL", "https://custom.example.com")
-	defer func() {
-		os.Unsetenv("DEEPSEEK_API_KEY")
-		os.Unsetenv("TARGET_MODEL")
-		os.Unsetenv("PROXY_PORT")
-		os.Unsetenv("TARGET_BASE_URL")
-	}()
+	t.Setenv("DEEPSEEK_API_KEY", "sk-custom")
+	t.Setenv("TARGET_MODEL", "deepseek-v4-pro")
+	t.Setenv("PROXY_PORT", "9090")
+	t.Setenv("TARGET_BASE_URL", "https://custom.example.com")
 
 	cfg, err := LoadConfig()
 	if err != nil {
