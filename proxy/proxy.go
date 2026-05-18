@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
-	"time"
 )
 
 // Handler is the HTTP handler for the proxy.
@@ -18,7 +18,7 @@ type Handler struct {
 func NewHandler(config *Config) *Handler {
 	return &Handler{
 		config: config,
-		client: &http.Client{Timeout: 30 * time.Second},
+		client: &http.Client{},
 	}
 }
 
@@ -71,7 +71,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		log.Printf("error copying upstream response: %v", err)
+	}
 }
 
 func writeError(w http.ResponseWriter, status int, errType, msg string) {

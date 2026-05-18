@@ -25,7 +25,9 @@ func TestHandler_HealthCheck(t *testing.T) {
 	}
 
 	var resp map[string]string
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 	if resp["status"] != "ok" {
 		t.Errorf("expected status ok, got %v", resp["status"])
 	}
@@ -53,7 +55,10 @@ func TestHandler_ForwardsToUpstream(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify the request was transformed
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("failed to decode upstream request: %v", err)
+			return
+		}
 
 		if body["model"] != "deepseek-v4-flash" {
 			t.Errorf("expected model deepseek-v4-flash, got %v", body["model"])
@@ -97,7 +102,9 @@ func TestHandler_ForwardsToUpstream(t *testing.T) {
 	}
 
 	var resp map[string]any
-	json.Unmarshal(w.Body.Bytes(), &resp)
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
 	if resp["id"] != "msg_123" {
 		t.Errorf("expected msg_123, got %v", resp["id"])
 	}
