@@ -113,4 +113,11 @@ func TestTransformRequest_PreservesOtherFields(t *testing.T) {
 	if result["temperature"] != 0.7 {
 		t.Errorf("temperature should be preserved")
 	}
+	if result["system"] != "be helpful" {
+		t.Errorf("system should be preserved")
+	}
+	tools := result["tools"].([]any)
+	if len(tools) != 1 {
+		t.Errorf("tools should be preserved")
+	}
 }
