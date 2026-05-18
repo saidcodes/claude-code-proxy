@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 )
 
 // Handler is the HTTP handler for the proxy.
@@ -17,7 +18,7 @@ type Handler struct {
 func NewHandler(config *Config) *Handler {
 	return &Handler{
 		config: config,
-		client: &http.Client{},
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -47,7 +48,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	upstreamURL := h.config.TargetBaseURL + "/v1/messages"
-	upstreamReq, err := http.NewRequest(http.MethodPost, upstreamURL, bytes.NewReader(transformed))
+	upstreamReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamURL, bytes.NewReader(transformed))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "api_error", "failed to create upstream request")
 		return
