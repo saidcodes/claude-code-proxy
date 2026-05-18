@@ -6,12 +6,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // Handler is the HTTP handler for the proxy.
 type Handler struct {
 	config *Config
 	client *http.Client
+	admin  *AdminHandler
 }
 
 // NewHandler creates a new proxy handler with the given config.
@@ -19,10 +21,17 @@ func NewHandler(config *Config) *Handler {
 	return &Handler{
 		config: config,
 		client: &http.Client{},
+		admin:  NewAdminHandler(config),
 	}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Admin routes
+	if r.URL.Path == "/" || strings.HasPrefix(r.URL.Path, "/admin/") {
+		h.admin.ServeHTTP(w, r)
+		return
+	}
+
 	if r.URL.Path == "/health" && r.Method == http.MethodGet {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -32,6 +41,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path != "/v1/messages" || r.Method != http.MethodPost {
 		http.NotFound(w, r)
+		return
+	}
+
+	if h.config.DeepSeekAPIKey == "" {
+		writeError(w, http.StatusBadRequest, "api_key_missing",
+			"No API key configured. Visit http://localhost:"+h.config.ProxyPort+"/ to set one.")
 		return
 	}
 

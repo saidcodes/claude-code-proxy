@@ -110,6 +110,27 @@ func TestHandler_ForwardsToUpstream(t *testing.T) {
 	}
 }
 
+func TestHandler_MissingKey(t *testing.T) {
+	cfg := &Config{
+		DeepSeekAPIKey: "",
+		TargetModel:    "deepseek-v4-flash",
+		TargetBaseURL:  "http://localhost:9999",
+		ProxyPort:      "8080",
+	}
+	h := NewHandler(cfg)
+
+	body := `{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"hi"}]}`
+	req := httptest.NewRequest(http.MethodPost, "/v1/messages", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", w.Code)
+	}
+}
+
 func TestHandler_UpstreamError(t *testing.T) {
 	// Upstream that returns an error
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
